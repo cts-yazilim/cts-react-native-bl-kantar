@@ -1,5 +1,6 @@
 package com.blkantar;
 
+import java.util.List;
 import android.util.Log;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
@@ -9,13 +10,17 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.ComponentName;
+import android.content.Context;
 
+import com.facebook.react.modules.core.DeviceEventManagerModule;
+import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.bridge.WritableNativeMap;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 
-public class RNAndroidBLKantarModule extends ReactContextBaseJavaModule {
+public class RNAndroidBLKantarModule extends ReactContextBaseJavaModule implements ServiceConnection {
 
     public static ReactApplicationContext reactContext;
 
@@ -36,14 +41,20 @@ public class RNAndroidBLKantarModule extends ReactContextBaseJavaModule {
     private List<BluetoothGattService> ServiceList;
 
     @ReactMethod
-    public void Init() {
-        mDeviceAddress = "00:A0:50:55:03:66";
+    public void Init(String DeviceAdress) {
+        Log.d("INIT", "OK");
+        // mDeviceAddress = "00:A0:50:55:03:66";
+        reactContext.registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter());
+        mDeviceAddress = DeviceAdress;
         Intent gattServiceIntent = new Intent(reactContext, BluetoothLeService.class);
-        bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
+        reactContext.bindService(gattServiceIntent, this, Context.BIND_AUTO_CREATE);
+        Log.d("INIT", "FIN");
     }
 
     @ReactMethod
     public void ConnectDevice(String DeviceAdress) {
+
+        mBluetoothLeService.disconnect();
         mDeviceAddress = DeviceAdress;
         mBluetoothLeService.connect(mDeviceAddress);
     }
@@ -72,70 +83,84 @@ public class RNAndroidBLKantarModule extends ReactContextBaseJavaModule {
             final String action = intent.getAction();
             if (BluetoothLeService.ACTION_GATT_CONNECTED.equals(action)) {
                 mConnected = true;
-                updateConnectionState(R.string.connected);
-                invalidateOptionsMenu();
             } else if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)) {
                 mConnected = false;
-                updateConnectionState(R.string.disconnected);
-                invalidateOptionsMenu();
+                WritableMap map = new WritableNativeMap();
+                map.putString("connection_state", "false");
+                sendEvent("KantarConnectionState", map);
+
             } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
-                // Show all the supported services and characteristics on the user interface.
                 ServiceList = mBluetoothLeService.getSupportedGattServices();
                 sendNotification();
+                WritableMap map = new WritableNativeMap();
+                map.putString("connection_state", "true");
+                sendEvent("KantarConnectionState", map);
 
             } else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
-                displayData(intent.getStringExtra(BluetoothLeService.EXTRA_DATA));
+                WritableMap map = new WritableNativeMap();
+                map.putString("kantar_data", intent.getStringExtra(BluetoothLeService.EXTRA_DATA));
+                sendEvent("KantarData", map);
             }
         }
     };
 
-    private void updateConnectionState(final int durum) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                
-            }
-        });
+    @Override
+    public void onServiceConnected(ComponentName componentName, IBinder service) {
+
+        Log.d("OK", "Connected");
+        mBluetoothLeService = ((BluetoothLeService.LocalBinder) service).getService();
+        if (!mBluetoothLeService.initialize()) {
+            Log.e("TEST", "Unable to initialize Bluetooth");
+        }
+        mBluetoothLeService.connect(mDeviceAddress);
     }
 
-    private void displayData(String data) {
-        if (data != null) {
-        	Log.d("Receive",data);
-            mDataField.setText(data);
-            
-        }
+    @Override
+    public void onServiceDisconnected(ComponentName componentName) {
+        Log.d("OK", "Disconnected");
+        mBluetoothLeService = null;
     }
 
+    // private final ServiceConnection mServiceConnection = new ServiceConnection()
+    // {
 
-    private final ServiceConnection mServiceConnection = new ServiceConnection() {
+    // @Override
+    // public void onServiceConnected(ComponentName componentName, IBinder service)
+    // {
 
-        @Override
-        public void onServiceConnected(ComponentName componentName, IBinder service) {
+    // Log.d("OK", "Connected");
+    // mBluetoothLeService = ((BluetoothLeService.LocalBinder)
+    // service).getService();
+    // if (!mBluetoothLeService.initialize()) {
+    // Log.e("TEST", "Unable to initialize Bluetooth");
+    // }
+    // mBluetoothLeService.connect(mDeviceAddress);
+    // }
 
-            Log.d("OK", "Connected");
-            mBluetoothLeService = ((BluetoothLeService.LocalBinder) service).getService();
-            if (!mBluetoothLeService.initialize()) {
-                Log.e(TAG, "Unable to initialize Bluetooth");
-            }
-            mBluetoothLeService.connect(mDeviceAddress);
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName componentName) {
-            Log.d("OK", "Disconnected");
-            mBluetoothLeService = null;
-        }
-    };
+    // @Override
+    // public void onServiceDisconnected(ComponentName componentName) {
+    // Log.d("OK", "Disconnected");
+    // mBluetoothLeService = null;
+    // }
+    // };
 
     private void sendEvent(String eventName, WritableMap map) {
         try {
 
             reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class).emit(eventName, map);
         } catch (Exception e) {
-            Log.d("ReactNativeJS", "Exception in sendEvent in ReferrerBroadcastReceiver is:" + e.toString());
+            Log.d("ReactNativeJS", "Exception in sendEvent in ReferrerBroadcastReceiveris:" + e.toString());
         }
 
     }
 
+    private static IntentFilter makeGattUpdateIntentFilter() {
+        final IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(BluetoothLeService.ACTION_GATT_CONNECTED);
+        intentFilter.addAction(BluetoothLeService.ACTION_GATT_DISCONNECTED);
+        intentFilter.addAction(BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED);
+        intentFilter.addAction(BluetoothLeService.ACTION_DATA_AVAILABLE);
+        return intentFilter;
+    }
 
 }

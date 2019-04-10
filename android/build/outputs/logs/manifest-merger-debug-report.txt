@@ -8,7 +8,7 @@ INJECTED from C:\Users\Saksar\Desktop\Lib\TestBridge\node_modules\cts-react-nati
 INJECTED from C:\Users\Saksar\Desktop\Lib\TestBridge\node_modules\cts-react-native-bl-kantar\android\src\main\AndroidManifest.xml:2:1-5:12
 INJECTED from C:\Users\Saksar\Desktop\Lib\TestBridge\node_modules\cts-react-native-bl-kantar\android\src\main\AndroidManifest.xml:2:1-5:12
 	package
-		ADDED from C:\Users\Saksar\Desktop\Lib\TestBridge\node_modules\cts-react-native-bl-kantar\android\src\main\AndroidManifest.xml:3:11-38
+		ADDED from C:\Users\Saksar\Desktop\Lib\TestBridge\node_modules\cts-react-native-bl-kantar\android\src\main\AndroidManifest.xml:3:11-33
 		INJECTED from C:\Users\Saksar\Desktop\Lib\TestBridge\node_modules\cts-react-native-bl-kantar\android\src\main\AndroidManifest.xml
 		INJECTED from C:\Users\Saksar\Desktop\Lib\TestBridge\node_modules\cts-react-native-bl-kantar\android\src\main\AndroidManifest.xml
 	android:versionName
