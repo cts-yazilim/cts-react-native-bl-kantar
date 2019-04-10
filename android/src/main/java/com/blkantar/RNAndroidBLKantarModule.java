@@ -37,6 +37,7 @@ public class RNAndroidBLKantarModule extends ReactContextBaseJavaModule implemen
     private String mDeviceAddress;
     private BluetoothLeService mBluetoothLeService;
     private boolean mConnected = false;
+    private boolean hasService = false;
     private BluetoothGattCharacteristic mNotifyCharacteristic;
     private List<BluetoothGattService> ServiceList;
 
@@ -53,10 +54,22 @@ public class RNAndroidBLKantarModule extends ReactContextBaseJavaModule implemen
 
     @ReactMethod
     public void ConnectDevice(String DeviceAdress) {
-
+        
+        // if (mConnected) {
+        //     DisconnectDevice();
+        // }
         mBluetoothLeService.disconnect();
         mDeviceAddress = DeviceAdress;
         mBluetoothLeService.connect(mDeviceAddress);
+    }
+
+    @ReactMethod
+    public void DisconnectDevice() {
+
+        // mBluetoothLeService.disconnect();
+        // mDeviceAddress = DeviceAdress;
+        mBluetoothLeService.disconnect();
+        reactContext.unbindService(this);
     }
 
     private void sendNotification() {
@@ -85,21 +98,26 @@ public class RNAndroidBLKantarModule extends ReactContextBaseJavaModule implemen
                 mConnected = true;
             } else if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)) {
                 mConnected = false;
+                hasService = false;
                 WritableMap map = new WritableNativeMap();
                 map.putString("connection_state", "false");
                 sendEvent("KantarConnectionState", map);
 
             } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
-                ServiceList = mBluetoothLeService.getSupportedGattServices();
-                sendNotification();
-                WritableMap map = new WritableNativeMap();
-                map.putString("connection_state", "true");
-                sendEvent("KantarConnectionState", map);
-
+                Log.d("SERVICES", "SERVICES");
+                if (!hasService) {
+                    hasService = true;
+                    ServiceList = mBluetoothLeService.getSupportedGattServices();
+                    sendNotification();
+                    WritableMap map = new WritableNativeMap();
+                    map.putString("connection_state", "true");
+                    sendEvent("KantarConnectionState", map);
+                }
             } else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
                 WritableMap map = new WritableNativeMap();
                 map.putString("kantar_data", intent.getStringExtra(BluetoothLeService.EXTRA_DATA));
                 sendEvent("KantarData", map);
+
             }
         }
     };
