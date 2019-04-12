@@ -99,24 +99,19 @@ public class RNAndroidBLKantarModule extends ReactContextBaseJavaModule implemen
             } else if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)) {
                 mConnected = false;
                 hasService = false;
-                WritableMap map = new WritableNativeMap();
-                map.putString("connection_state", "false");
-                sendEvent("KantarConnectionState", map);
+               
 
             } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
                 Log.d("SERVICES", "SERVICES");
-                if (!hasService) {
-                    hasService = true;
                     ServiceList = mBluetoothLeService.getSupportedGattServices();
                     sendNotification();
-                    WritableMap map = new WritableNativeMap();
-                    map.putString("connection_state", "true");
-                    sendEvent("KantarConnectionState", map);
-                }
+                    // WritableMap map = new WritableNativeMap();
+                    // map.putString("connection_state", "true");
+                    // sendEvent("KantarConnectionState", map);
             } else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
-                WritableMap map = new WritableNativeMap();
-                map.putString("kantar_data", intent.getStringExtra(BluetoothLeService.EXTRA_DATA));
-                sendEvent("KantarData", map);
+                // WritableMap map = new WritableNativeMap();
+                // map.putString("kantar_data", intent.getStringExtra(BluetoothLeService.EXTRA_DATA));
+                // sendEvent("KantarData", map);
 
             }
         }
@@ -162,15 +157,7 @@ public class RNAndroidBLKantarModule extends ReactContextBaseJavaModule implemen
     // }
     // };
 
-    private void sendEvent(String eventName, WritableMap map) {
-        try {
-
-            reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class).emit(eventName, map);
-        } catch (Exception e) {
-            Log.d("ReactNativeJS", "Exception in sendEvent in ReferrerBroadcastReceiveris:" + e.toString());
-        }
-
-    }
+  
 
     private static IntentFilter makeGattUpdateIntentFilter() {
         final IntentFilter intentFilter = new IntentFilter();

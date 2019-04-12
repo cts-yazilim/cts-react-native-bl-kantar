@@ -10,7 +10,7 @@
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
+ * See the License for the specific  language governing permissions and
  * limitations under the License.
  */
 
@@ -32,6 +32,12 @@ import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
+
+import com.facebook.react.ReactInstanceManager;
+import com.facebook.react.bridge.ReactContext;
+import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.bridge.WritableNativeMap;
+import com.facebook.react.modules.core.DeviceEventManagerModule;
 
 import java.util.List;
 import java.util.UUID;
@@ -71,7 +77,6 @@ public class BluetoothLeService extends Service {
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 intentAction = ACTION_GATT_CONNECTED;
                 mConnectionState = STATE_CONNECTED;
-                broadcastUpdate(intentAction);
                 Log.i(TAG, "Connected to GATT server.");
                 // Attempts to discover services after successful connection.
                 Log.i(TAG, "Attempting to start service discovery:" + mBluetoothGatt.discoverServices());
@@ -81,7 +86,9 @@ public class BluetoothLeService extends Service {
                 mConnectionState = STATE_DISCONNECTED;
                 Log.i(TAG, "Disconnected from GATT server.");
                 Data = "";
-                broadcastUpdate(intentAction);
+                WritableMap map = new WritableNativeMap();
+                map.putString("connection_state", "false");
+                sendEvent("KantarConnectionState", map);
             }
         }
 
@@ -89,6 +96,9 @@ public class BluetoothLeService extends Service {
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 broadcastUpdate(ACTION_GATT_SERVICES_DISCOVERED);
+                WritableMap map = new WritableNativeMap();
+                map.putString("connection_state", "true");
+                sendEvent("KantarConnectionState", map);
             } else {
                 Log.w(TAG, "onServicesDiscovered received: " + status);
             }
@@ -121,13 +131,19 @@ public class BluetoothLeService extends Service {
         final byte[] data = characteristic.getValue();
 
         Data = Data + new String(data);
-
+        Log.d("TEST", "TEST");
         String[] arrData = Data.split("\n");
 
         if (arrData.length > 1) {
-            Log.d("DATA",arrData[arrData.length - 2].replace("+", "").replace(" ", "").replace("k", "").replace("g", ""));
-            intent.putExtra(EXTRA_DATA,arrData[arrData.length - 2].replace("+", "").replace(" ", "").replace("k", "").replace("g", ""));
-            sendBroadcast(intent);
+            String sendingData = arrData[arrData.length - 2].replace("+", "").replace(" ", "").replace("k", "")
+                    .replace("g", "");
+            Log.d("TEST", sendingData);
+            WritableMap map = new WritableNativeMap();
+            map.putString("kantar_data", sendingData);
+            sendEvent("KantarData", map);
+            writeCharacteristic(characteristic);
+            setCharacteristicNotification(characteristic, true);
+            Data="";
         }
     }
 
@@ -263,6 +279,16 @@ public class BluetoothLeService extends Service {
         mBluetoothGatt.readCharacteristic(characteristic);
     }
 
+    public void writeCharacteristic(BluetoothGattCharacteristic characteristic) {
+        if (this.mBluetoothAdapter != null) {
+            if (this.mBluetoothGatt != null) {
+                this.mBluetoothGatt.writeCharacteristic(characteristic);
+                return;
+            }
+        }
+        Log.w(TAG, "BluetoothAdapter not initialized");
+    }
+
     /**
      * Enables or disables notification on a give characteristic.
      *
@@ -283,6 +309,16 @@ public class BluetoothLeService extends Service {
             descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
             mBluetoothGatt.writeDescriptor(descriptor);
         }
+    }
+
+    private void sendEvent(String eventName, WritableMap map) {
+        try {
+            ReactContext reactContext = RNAndroidBLKantarModule.reactContext;
+            reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class).emit(eventName, map);
+        } catch (Exception e) {
+            Log.d("ReactNativeJS", "Exception in sendEvent in ReferrerBroadcastReceiveris:" + e.toString());
+        }
+
     }
 
     /**
