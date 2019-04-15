@@ -69,6 +69,8 @@ public class RNAndroidBLKantarModule extends ReactContextBaseJavaModule implemen
         // mBluetoothLeService.disconnect();
         // mDeviceAddress = DeviceAdress;
         mBluetoothLeService.disconnect();
+          //Add new 
+        mBluetoothLeService.close();
         reactContext.unbindService(this);
     }
 
