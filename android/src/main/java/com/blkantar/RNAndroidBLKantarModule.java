@@ -65,13 +65,15 @@ public class RNAndroidBLKantarModule extends ReactContextBaseJavaModule implemen
 
     @ReactMethod
     public void DisconnectDevice() {
-
+        try{
         // mBluetoothLeService.disconnect();
         // mDeviceAddress = DeviceAdress;
         mBluetoothLeService.disconnect();
           //Add new 
         mBluetoothLeService.close();
-        reactContext.unbindService(this);
+        reactContext.unbindService(this); 
+        }
+        catch (Exception ex){ }
     }
 
     private void sendNotification() {
