@@ -105,8 +105,11 @@ public class RNAndroidBLKantarModule extends ReactContextBaseJavaModule implemen
 
             } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
                 Log.d("SERVICES", "SERVICES");
+                 if(mBluetoothLeService != null)
+                {
                     ServiceList = mBluetoothLeService.getSupportedGattServices();
                     sendNotification();
+                     }
                     // WritableMap map = new WritableNativeMap();
                     // map.putString("connection_state", "true");
                     // sendEvent("KantarConnectionState", map);
