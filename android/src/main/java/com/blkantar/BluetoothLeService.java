@@ -131,7 +131,6 @@ public class BluetoothLeService extends Service {
         final byte[] data = characteristic.getValue();
 
         Data = Data + new String(data);
-        Log.d("TEST", "TEST");
         String[] arrData = Data.split("\n");
 
         if (arrData.length > 1) {

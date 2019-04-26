@@ -54,10 +54,11 @@ public class RNAndroidBLKantarModule extends ReactContextBaseJavaModule implemen
 
     @ReactMethod
     public void ConnectDevice(String DeviceAdress) {
-        
+
         // if (mConnected) {
-        //     DisconnectDevice();
+        // DisconnectDevice();
         // }
+
         mBluetoothLeService.disconnect();
         mDeviceAddress = DeviceAdress;
         mBluetoothLeService.connect(mDeviceAddress);
@@ -65,29 +66,33 @@ public class RNAndroidBLKantarModule extends ReactContextBaseJavaModule implemen
 
     @ReactMethod
     public void DisconnectDevice() {
-        try{
-        // mBluetoothLeService.disconnect();
-        // mDeviceAddress = DeviceAdress;
-        mBluetoothLeService.disconnect();
-          //Add new 
-        mBluetoothLeService.close();
-        reactContext.unbindService(this); 
+        try {
+            // mBluetoothLeService.disconnect();
+            // mDeviceAddress = DeviceAdress;
+            mBluetoothLeService.disconnect();
+            // Add new
+            mBluetoothLeService.close();
+            reactContext.unbindService(this);
+        } catch (Exception ex) {
         }
-        catch (Exception ex){ }
     }
 
     private void sendNotification() {
-        for (BluetoothGattService gattService : ServiceList) {
+        Log.d("SERVICES", "SENDNOTFY");
+        if (ServiceList != null) {
+            for (BluetoothGattService gattService : ServiceList) {
+                Log.d("SERVICES", "SENDNOTFY");
+                List<BluetoothGattCharacteristic> gattCharacteristics = gattService.getCharacteristics();
 
-            List<BluetoothGattCharacteristic> gattCharacteristics = gattService.getCharacteristics();
-
-            // Loops through available Characteristics.
-            for (BluetoothGattCharacteristic gattCharacteristic : gattCharacteristics) {
-                if (gattCharacteristic.getUuid().toString().equalsIgnoreCase("E2B976D6-EB3D-4225-95C8-5CD621D36265")) {
-                    final int charaProp = gattCharacteristic.getProperties();
-                    if ((charaProp | BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
-                        mNotifyCharacteristic = gattCharacteristic;
-                        mBluetoothLeService.setCharacteristicNotification(gattCharacteristic, true);
+                // Loops through available Characteristics.
+                for (BluetoothGattCharacteristic gattCharacteristic : gattCharacteristics) {
+                    if (gattCharacteristic.getUuid().toString()
+                            .equalsIgnoreCase("E2B976D6-EB3D-4225-95C8-5CD621D36265")) {
+                        final int charaProp = gattCharacteristic.getProperties();
+                        if ((charaProp | BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
+                            mNotifyCharacteristic = gattCharacteristic;
+                            mBluetoothLeService.setCharacteristicNotification(gattCharacteristic, true);
+                        }
                     }
                 }
             }
@@ -103,21 +108,20 @@ public class RNAndroidBLKantarModule extends ReactContextBaseJavaModule implemen
             } else if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)) {
                 mConnected = false;
                 hasService = false;
-               
 
             } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
                 Log.d("SERVICES", "SERVICES");
-                 if(mBluetoothLeService != null)
-                {
+                if (mBluetoothLeService != null) {
                     ServiceList = mBluetoothLeService.getSupportedGattServices();
                     sendNotification();
-                     }
-                    // WritableMap map = new WritableNativeMap();
-                    // map.putString("connection_state", "true");
-                    // sendEvent("KantarConnectionState", map);
+                }
+                // WritableMap map = new WritableNativeMap();
+                // map.putString("connection_state", "true");
+                // sendEvent("KantarConnectionState", map);
             } else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
                 // WritableMap map = new WritableNativeMap();
-                // map.putString("kantar_data", intent.getStringExtra(BluetoothLeService.EXTRA_DATA));
+                // map.putString("kantar_data",
+                // intent.getStringExtra(BluetoothLeService.EXTRA_DATA));
                 // sendEvent("KantarData", map);
 
             }
@@ -127,10 +131,10 @@ public class RNAndroidBLKantarModule extends ReactContextBaseJavaModule implemen
     @Override
     public void onServiceConnected(ComponentName componentName, IBinder service) {
 
-        Log.d("OK", "Connected");
+        Log.d("INIT", "Connected");
         mBluetoothLeService = ((BluetoothLeService.LocalBinder) service).getService();
         if (!mBluetoothLeService.initialize()) {
-            Log.e("TEST", "Unable to initialize Bluetooth");
+            Log.e("INIT", "Unable to initialize Bluetooth");
         }
         mBluetoothLeService.connect(mDeviceAddress);
     }
@@ -163,8 +167,6 @@ public class RNAndroidBLKantarModule extends ReactContextBaseJavaModule implemen
     // mBluetoothLeService = null;
     // }
     // };
-
-  
 
     private static IntentFilter makeGattUpdateIntentFilter() {
         final IntentFilter intentFilter = new IntentFilter();
