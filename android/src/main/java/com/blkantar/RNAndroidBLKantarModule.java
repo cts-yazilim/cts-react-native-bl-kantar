@@ -58,45 +58,38 @@ public class RNAndroidBLKantarModule extends ReactContextBaseJavaModule implemen
         // if (mConnected) {
         // DisconnectDevice();
         // }
-        if(mBluetoothLeService != null)
-        {
-
         mBluetoothLeService.disconnect();
         mDeviceAddress = DeviceAdress;
         mBluetoothLeService.connect(mDeviceAddress);
     }
-   
-    }
 
     @ReactMethod
     public void DisconnectDevice() {
+
+        // mBluetoothLeService.disconnect();
+        // mDeviceAddress = DeviceAdress;
         try {
-            // mBluetoothLeService.disconnect();
-            // mDeviceAddress = DeviceAdress;
+
             mBluetoothLeService.disconnect();
-            // Add new
             mBluetoothLeService.close();
             reactContext.unbindService(this);
         } catch (Exception ex) {
+
         }
     }
 
     private void sendNotification() {
-        Log.d("SERVICES", "SENDNOTFY");
-        if (ServiceList != null) {
-            for (BluetoothGattService gattService : ServiceList) {
-                Log.d("SERVICES", "SENDNOTFY");
-                List<BluetoothGattCharacteristic> gattCharacteristics = gattService.getCharacteristics();
+        for (BluetoothGattService gattService : ServiceList) {
 
-                // Loops through available Characteristics.
-                for (BluetoothGattCharacteristic gattCharacteristic : gattCharacteristics) {
-                    if (gattCharacteristic.getUuid().toString()
-                            .equalsIgnoreCase("E2B976D6-EB3D-4225-95C8-5CD621D36265")) {
-                        final int charaProp = gattCharacteristic.getProperties();
-                        if ((charaProp | BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
-                            mNotifyCharacteristic = gattCharacteristic;
-                            mBluetoothLeService.setCharacteristicNotification(gattCharacteristic, true);
-                        }
+            List<BluetoothGattCharacteristic> gattCharacteristics = gattService.getCharacteristics();
+
+            // Loops through available Characteristics.
+            for (BluetoothGattCharacteristic gattCharacteristic : gattCharacteristics) {
+                if (gattCharacteristic.getUuid().toString().equalsIgnoreCase("E2B976D6-EB3D-4225-95C8-5CD621D36265")) {
+                    final int charaProp = gattCharacteristic.getProperties();
+                    if ((charaProp | BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
+                        mNotifyCharacteristic = gattCharacteristic;
+                        mBluetoothLeService.setCharacteristicNotification(gattCharacteristic, true);
                     }
                 }
             }
@@ -114,7 +107,6 @@ public class RNAndroidBLKantarModule extends ReactContextBaseJavaModule implemen
                 hasService = false;
 
             } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
-                Log.d("SERVICES", "SERVICES");
                 if (mBluetoothLeService != null) {
                     ServiceList = mBluetoothLeService.getSupportedGattServices();
                     sendNotification();
@@ -135,10 +127,10 @@ public class RNAndroidBLKantarModule extends ReactContextBaseJavaModule implemen
     @Override
     public void onServiceConnected(ComponentName componentName, IBinder service) {
 
-        Log.d("INIT", "Connected");
+        Log.d("OK", "Connected");
         mBluetoothLeService = ((BluetoothLeService.LocalBinder) service).getService();
         if (!mBluetoothLeService.initialize()) {
-            Log.e("INIT", "Unable to initialize Bluetooth");
+            Log.e("TEST", "Unable to initialize Bluetooth");
         }
         mBluetoothLeService.connect(mDeviceAddress);
     }
